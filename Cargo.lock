@@ -7,6 +7,7 @@ name = "RL2048"
 version = "0.1.0"
 dependencies = [
  "ggez",
+ "rand",
 ]
 
 [[package]]
