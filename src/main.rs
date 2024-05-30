@@ -8,8 +8,6 @@ struct State {
     board_mergable: [[bool; 4]; 4],
     //current store
     score: u32,
-    //random number gen
-    rng: ThreadRng
 }
 
 impl State {
@@ -34,14 +32,14 @@ impl State {
         board[x0][y0] = State::gen_tile_value();
         board[x1][y1] = State::gen_tile_value();
 
-        State { board, board_mergable: [[true; 4]; 4], score: 0, rng }
+        State { board, board_mergable: [[true; 4]; 4], score: 0}
     }
 
     //prints the board for debugging
     fn print_board(&self) {
         for y in (0..4).rev() {
             for x in 0..4 {
-                print!("{:4} ", self.board[y][x]);
+                print!("{:4} ", self.board[x][y]);
             }
             println!();
         }
@@ -110,7 +108,7 @@ impl State {
     }
     // 0: up, 1: right, 2: down, 3: left
     fn slide_board(&mut self, direction: u8) -> Result<()>{
-        self.print_board();
+        
 
         let old_board = self.board.clone();
         //priotize merging at the direction then top to bottom if left or right and left to right if up or down
@@ -159,6 +157,8 @@ impl State {
                 self.gen_new_tile()?
             }
         }
+        
+        self.print_board();
         Ok(())
 
     }
@@ -166,6 +166,7 @@ impl State {
     // 0: up, 1: right, 2: down, 3: left
     fn slide_tile(&mut self, direction: u8, x: usize, y: usize) -> Result<()>{
 
+        
         
         let tile_value = self.get_tile_value(x, y);
 
@@ -177,6 +178,7 @@ impl State {
             return Err(anyhow!(format!("Invalid direction {}", direction)));
         }
 
+        
         match direction{
             //up
             0 => {
@@ -186,7 +188,7 @@ impl State {
                         //move
                         self.board[x][y+1] = tile_value;
                         self.board[x][y] = 0;
-
+                        self.print_board();
                         self.slide_tile(direction, x, y+1)?;
                     },
                     _ if next_tile == tile_value => {
@@ -200,7 +202,8 @@ impl State {
                         self.board[x][y] = 0;
                         self.board_mergable[x][y+1] = false;
 
-                        self.slide_tile(direction, x, y+1)?;
+                        //we're done here
+                        return Ok(())
                     },
                     _ => {
                         //we're done here
@@ -232,7 +235,6 @@ impl State {
                         self.board[x][y] = 0;
                         self.board_mergable[x+1][y] = false;
 
-                        self.slide_tile(direction, x+1, y)?;
                         Ok(())
                     },
                     _ => {
@@ -264,7 +266,6 @@ impl State {
                         self.board[x][y] = 0;
                         self.board_mergable[x][y-1] = false;
 
-                        self.slide_tile(direction, x, y-1)?;
                         Ok(())
                     },
                     _ => {
@@ -296,7 +297,6 @@ impl State {
                         self.board[x][y] = 0;
                         self.board_mergable[x-1][y] = false;
 
-                        self.slide_tile(direction, x-1, y)?;
                         Ok(())
                     },
                     _ => {
@@ -319,7 +319,7 @@ impl State {
             return 1;
         }
 
-        self.board[y][x]
+        self.board[x][y]
     }
 
 
@@ -342,6 +342,41 @@ async fn main() {
         }
         if macroquad::input::is_key_pressed(macroquad::input::KeyCode::A) {
             state.slide_board(3).unwrap();
+        }
+        macroquad::window::clear_background(macroquad::color::WHITE);
+        for y in (0..4) {
+            for x in 0..4 {
+                let tile_value = state.get_tile_value(x, y);
+                let color = match tile_value {
+                    0 => macroquad::color::WHITE,
+                    2 => macroquad::color::RED,
+                    4 => macroquad::color::BLUE,
+                    8 => macroquad::color::GREEN,
+                    16 => macroquad::color::YELLOW,
+                    32 => macroquad::color::PURPLE,
+                    64 => macroquad::color::ORANGE,
+                    128 => macroquad::color::PINK,
+                    256 => macroquad::color::GRAY,
+                    512 => macroquad::color::BROWN,
+                    1024 => macroquad::color::MAGENTA,
+                    2048 => macroquad::color::GOLD,
+                    _ => macroquad::color::BLACK,
+                };
+                macroquad::shapes::draw_rectangle(
+                    x as f32 * 100.0,
+                    (3-y) as f32 * 100.0,
+                    100.0,
+                    100.0,
+                    color,
+                );
+                macroquad::text::draw_text(
+                    &tile_value.to_string(),
+                    x as f32 * 100.0 + 50.0,
+                    (3-y) as f32 * 100.0 + 50.0,
+                    25.0,
+                    macroquad::color::BLACK,
+                );
+            }
         }
         macroquad::window::next_frame().await
     }
