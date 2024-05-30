@@ -1,6 +1,7 @@
 use rand::{rngs::ThreadRng, Rng};
 use anyhow::{anyhow, Ok, Result};
-
+mod GUI;
+use GUI::*;
 struct State {
     //contains actual numbers on board
     board: [[u16; 4]; 4],
@@ -325,7 +326,7 @@ impl State {
 
 }
 
-#[macroquad::main("BasicShapes")]
+#[macroquad::main("rl2048")]
 async fn main() {
     let state = State::new();
     let mut state = state;
@@ -343,7 +344,7 @@ async fn main() {
         if macroquad::input::is_key_pressed(macroquad::input::KeyCode::A) {
             state.slide_board(3).unwrap();
         }
-        macroquad::window::clear_background(macroquad::color::WHITE);
+        
         for y in (0..4) {
             for x in 0..4 {
                 let tile_value = state.get_tile_value(x, y);
